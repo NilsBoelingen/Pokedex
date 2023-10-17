@@ -17,7 +17,7 @@
             integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
             crossorigin="anonymous"></script>
     </head>
-    <body onload="initPokedex()">
+    <body onload="initMoves()">
         <div class="pokedex-main-container">
             <div class="pokedex-img-container">
                 <h4 id="currentPokemonNumber"></h4>
@@ -26,17 +26,10 @@
             <div class="pokedex-stats-main-container">
                 <h1 id="currentPokemonName"></h1>
 
-                <div class="pokemon-class-container" id="typesContainer">
-                </div>
-                <div class="pokemon-size-container" id="sizeContainer">
-                </div>
-                <div class="base-stats-maincontainer">
-                    <h1>Base Stats</h1>
-                    <table id="statsContainer">
-                    </table>
-                </div>
+                <table id="moveList">
+                </table>
 
-                <button type="button" class="btn btn-primary" onclick="window.location.href='./moves.html'">Show Moves</button>
+                <button type="button" class="btn btn-primary" onclick="window.location.href='./pokedex.html'">Back to Stats</button>
 
 
             </div>
