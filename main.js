@@ -3,6 +3,7 @@ let currentPokemon;
 let maxStats = [255, 190, 250, 194, 250, 200];
 let statNames = ['HP', 'ATK', 'DEF', 'S-ATK', 'S-DEF', 'SPD'];
 let currentTypes = [];
+let offset = 0;
 
 async function initMainPage() {
     clearTypes();
@@ -36,10 +37,30 @@ async function getPokemon(pokemon) {
 }
 
 async function getPokemonList() {
-    let url = 'https://pokeapi.co/api/v2/pokemon/?limit=20';
+    let url = `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=20`;
     let response = await fetch(url);
     let responseAtJson = await response.json();
     allPokemon = responseAtJson.results;
+}
+
+function next20Pokemon() {
+    if (offset <= 1260) {
+        offset = offset + 20;
+        initMainPage();
+    } else {
+        offset = 0;
+        initMainPage();
+    }
+}
+
+function previous20Pokemon() {
+    if (offset >= 20) {
+    offset = offset - 20;
+    initMainPage();
+    } else {
+        offset = 1280;
+        initMainPage();
+    }
 }
 
 function loadPokemonList() {
@@ -58,21 +79,43 @@ async function renderImg() {
         await getPokemon(pokemon);
         let imgContainer = document.getElementById(`pokemon${i}`);
         let img = currentPokemon.sprites.other.dream_world.front_default;
-        imgContainer.setAttribute('src', `${img}`);
+        let imgAlt = currentPokemon.sprites.front_default;
+        let imgNotFound = './img/pokemon-logo.png';
+        if (img) {
+            imgContainer.setAttribute('src', `${img}`);
+        } else if (imgAlt) {
+            imgContainer.setAttribute('src', `${imgAlt}`);
+        } else {
+            imgContainer.setAttribute('src', `${imgNotFound}`);
+        }
         getCurrentTypes();
-        changeCardBackgroundColorByMainType(i);
+        changeBackgroundColorByType(0);
+        document.querySelector(`#poke-container${i}`).style.backgroundColor = color;
         clearTypes();
     }
 }
 
 function loadPokemonTop() {
     let currentPokemonName = document.getElementById('currentPokemonName');
-    let currentPokemonImg = document.getElementById('currentPokemonImg');
     let currentPokemonNumber = document.getElementById('currentPokemonNumber');
 
     currentPokemonName.innerHTML = `${currentPokemon.forms[0].name.toUpperCase()}`;
-    currentPokemonImg.setAttribute('src', `${currentPokemon.sprites.other.dream_world.front_default}`);
+    loadMainImg();
     currentPokemonNumber.innerHTML = `#${currentPokemon.id}`;
+}
+
+function loadMainImg() {
+    let currentPokemonImg = document.getElementById('currentPokemonImg');
+    let img = currentPokemon.sprites.other.dream_world.front_default;
+    let imgAlt = currentPokemon.sprites.front_default;
+    let imgNotFound = './img/pokemon-logo.png';
+    if (img) {
+        currentPokemonImg.setAttribute('src', `${img}`);
+    } else if (imgAlt) {
+        currentPokemonImg.setAttribute('src', `${imgAlt}`);
+    } else {
+        currentPokemonImg.setAttribute('src', `${imgNotFound}`);
+    }
 }
 
 function loadPokemonType() {
@@ -83,10 +126,17 @@ function loadPokemonType() {
     for (let i = 0; i < types.length; i++) {
         const type = types[i].type.name;
         typesContainer.innerHTML += renderPokemonTypes(i, type);
+
     }
     getCurrentTypes();
-    changeBackgroundColorByMainType();
-    changeBackgroundColorBySubType();
+
+    for (let j = 0; j < currentTypes.length; j++) {
+        changeBackgroundColorByType(j);
+        document.querySelector(`.pokemon-class${j}`).style.backgroundColor = color;
+    }
+    changeBackgroundColorByType(0);
+    document.querySelector('.pokedex-img-container').style.backgroundColor = color;
+    document.querySelector('#goToMoves').setAttribute('style', `background-color: ${color} !important`);
 }
 
 function loadPokemonSize() {
@@ -107,7 +157,9 @@ function loadPokemonStats() {
         const stat = stats[i].base_stat;
         const maxStat = maxStats[i];
         const statAsPercent = Math.round(stat / maxStat * 100);
-        statsContainer.innerHTML += renderPokemonStats(statName, stat, maxStat, statAsPercent);
+        statsContainer.innerHTML += renderPokemonStats(statName, stat, maxStat, statAsPercent, i);
+        changeBackgroundColorByType(0);
+        document.querySelector(`#stat${i}`).style.backgroundColor = color;
     }
     loadBaseExp(statsContainer);
 }
@@ -117,21 +169,26 @@ function loadBaseExp(statsContainer) {
     let bExpAsPercent = Math.round(bExp / 255 * 100);
 
     statsContainer.innerHTML += renderBaseExp(bExp, bExpAsPercent);
+    changeBackgroundColorByType(0);
+    document.querySelector('#EXP').style.backgroundColor = color;
 }
 
 function loadMoves() {
     let moveList = document.getElementById('moveList');
     let moves = currentPokemon.moves;
     moveList.innerHTML = renderMoves();
+    let important = ' !impotant'
     for (let i = 0; i < moves.length; i++) {
         const move = moves[i];
         const moveName = moves[i].move.name;
         renderMoveList(moveName, i);
         loadVersions(move, i,);
-        changeBackgroundColorOnMoveList(i);
+        changeBackgroundColorByType(0);
+        document.querySelector('.pokedex-img-container').style.backgroundColor = color;
+        document.querySelector(`#btn${i}`).setAttribute('style', `background-color: ${color} !important`);
     }
-    
-
+    changeBackgroundColorByType(0);
+    document.querySelector(`#backToStats`).setAttribute('style', `background-color: ${color} !important`);
 }
 
 function loadVersions(move, i) {
@@ -193,8 +250,8 @@ function renderMainPage() {
         <div id="pokemonList">
         </div>
         <div class="load-next-container">
-            <button type="button" class="btn btn-danger">< Prev. 20</button>
-            <button type="button" class="btn btn-danger">Next 20 ></button>
+            <button type="button" class="btn btn-danger" onclick="previous20Pokemon()">< Prev. 20</button>
+            <button type="button" class="btn btn-danger" onclick="next20Pokemon()">Next 20 ></button>
         </div>
     `;
 }
@@ -220,7 +277,7 @@ function renderPokedex(pokemon) {
                     <table id="statsContainer">
                     </table>
                 </div>
-            <button type="button" class="btn btn-primary" onclick="initMoves('${pokemon}')">Show Moves</button>
+            <button type="button" class="btn btn-primary" id="goToMoves" onclick="initMoves('${pokemon}')">Show Moves</button>
             </div>
         </div>
     `;
@@ -239,7 +296,7 @@ function renderMovePage(pokemon) {
                 <h1 id="currentPokemonName"></h1>
                 <table id="moveList">
                 </table>
-                <button type="button" class="btn btn-primary" onclick="initPokedex('${pokemon}')">Back to Stats</button>
+                <button type="button" class="btn btn-primary" id="backToStats" onclick="initPokedex('${pokemon}')">Back to Stats</button>
             </div>
         </div>
     `;
@@ -254,7 +311,7 @@ function renderBaseExp(bExp, bExpAsPercent) {
                 aria-label="Example with label"
                 aria-valuenow="${bExp}" aria-valuemin="0"
                 aria-valuemax="255">
-            <div class="progress-bar" style="width: ${bExpAsPercent}%">${bExp}/255</div>
+            <div class="progress-bar" id="EXP" style="width: ${bExpAsPercent}%">${bExp}/255</div>
             </div>
         </td>
     </tr>
@@ -272,7 +329,7 @@ function renderMoves() {
     `;
 }
 
-function renderPokemonStats(statName, stat, maxStat, statAsPercent) {
+function renderPokemonStats(statName, stat, maxStat, statAsPercent, i) {
     return `
     <tr>
         <td class="table-left"><span>${statName}</span></td>
@@ -281,7 +338,7 @@ function renderPokemonStats(statName, stat, maxStat, statAsPercent) {
                 aria-label="Example with label"
                 aria-valuenow="${stat}" aria-valuemin="0"
                 aria-valuemax="${maxStat}">
-            <div class="progress-bar" style="width: ${statAsPercent}%">${stat}/${maxStat}</div>
+                <div class="progress-bar" id="stat${i}" style="width: ${statAsPercent}%">${stat}/${maxStat}</div>
             </div>
         </td>
     </tr>
@@ -305,7 +362,7 @@ function renderPokemonList(pokemonName, i) {
     return `
     <div class="poke-container" id="poke-container${i}" onclick="initPokedex('${pokemonName}')">
         <img src="" id="pokemon${i}" class="poke-img">
-        <h2>${pokemonName.toUpperCase()}</h2>
+        <h3>${pokemonName.toUpperCase()}</h3>
     </div>
     `;
 }
@@ -318,269 +375,72 @@ function getCurrentTypes() {
     }
 }
 
-function changeBackgroundColorByMainType() {
-    let backgroundColor = 'white';
-
-    if (currentTypes.length > 0) {
-        const primaryType = currentTypes[0];
-        switch (primaryType) {
-            case 'normal':
-                backgroundColor = '#A8A878';
-                break;
-            case 'fire':
-                backgroundColor = '#F08030';
-                break;
-            case 'water':
-                backgroundColor = '#6890F0';
-            case 'grass':
-                backgroundColor = '#78c850';
-                break;
-            case 'electric':
-                backgroundColor = '#F8D030';
-                break;
-            case 'ice':
-                backgroundColor = '#98D8D8';
-                break;
-            case 'fighting':
-                backgroundColor = '#C03028';
-                break;
-            case 'posion':
-                backgroundColor = '#A040A0';
-                break;
-            case 'ground':
-                backgroundColor = '#E0C068';
-                break;
-            case 'flying':
-                backgroundColor = '#A890F0';
-                break;
-            case 'psychic':
-                backgroundColor = '#F85888';
-                break;
-            case 'bug':
-                backgroundColor = '#A8B820';
-                break;
-            case 'rock':
-                backgroundColor = '#B8A038';
-                break;
-            case 'ghost':
-                backgroundColor = '#705898';
-                break;
-            case 'dragon':
-                backgroundColor = '#7038F8';
-                break;
-            case 'dark':
-                backgroundColor = '#705848';
-                break;
-            case 'steel':
-                backgroundColor = '#B8B8D0';
-                break;
-            case 'fairy':
-                backgroundColor = '#F0B6BC';
-                break;
-        }
-    }
-    document.querySelector('.pokedex-img-container').style.backgroundColor = backgroundColor;
-    document.querySelector('.pokemon-class0').style.backgroundColor = backgroundColor;
-}
-
 function renderPokemonTypes(i, type) {
     return `
     <div class="pokemon-class${i}">${type.toUpperCase()}</div>
 `;
 }
 
-function changeBackgroundColorOnMoveList(i) {
-    let backgroundColor = 'white';
-
+function changeBackgroundColorByType(j) {
     if (currentTypes.length > 0) {
-        const primaryType = currentTypes[0];
+        const primaryType = currentTypes[j];
         switch (primaryType) {
             case 'normal':
-                backgroundColor = '#A8A878';
+                color = '#A8A878';
                 break;
             case 'fire':
-                backgroundColor = '#F08030';
+                color = '#F08030';
                 break;
             case 'water':
-                backgroundColor = '#6890F0';
+                color = '#6890F0';
             case 'grass':
-                backgroundColor = '#78c850';
+                color = '#78c850';
                 break;
             case 'electric':
-                backgroundColor = '#F8D030';
+                color = '#F8D030';
                 break;
             case 'ice':
-                backgroundColor = '#98D8D8';
+                color = '#98D8D8';
                 break;
             case 'fighting':
-                backgroundColor = '#C03028';
-                break;
-            case 'posion':
-                backgroundColor = '#A040A0';
-                break;
-            case 'ground':
-                backgroundColor = '#E0C068';
-                break;
-            case 'flying':
-                backgroundColor = '#A890F0';
-                break;
-            case 'psychic':
-                backgroundColor = '#F85888';
-                break;
-            case 'bug':
-                backgroundColor = '#A8B820';
-                break;
-            case 'rock':
-                backgroundColor = '#B8A038';
-                break;
-            case 'ghost':
-                backgroundColor = '#705898';
-                break;
-            case 'dragon':
-                backgroundColor = '#7038F8';
-                break;
-            case 'dark':
-                backgroundColor = '#705848';
-                break;
-            case 'steel':
-                backgroundColor = '#B8B8D0';
-                break;
-            case 'fairy':
-                backgroundColor = '#F0B6BC';
-                break;
-        }
-    }
-    document.querySelector('.pokedex-img-container').style.backgroundColor = backgroundColor;
-    document.querySelector(`#btn${i}`).style.backgroundColor = backgroundColor;
-    document.querySelector(`#btn${i}`).style.borderColor = backgroundColor;
-}
-
-function changeBackgroundColorBySubType() {
-    let backgroundColor = 'white';
-
-    if (currentTypes.length > 1) {
-        const primaryType = currentTypes[1];
-        switch (primaryType) {
-            case 'normal':
-                backgroundColor = '#A8A878';
-                break;
-            case 'fire':
-                backgroundColor = '#F08030';
-                break;
-            case 'water':
-                backgroundColor = '#6890F0';
-            case 'grass':
-                backgroundColor = '#78c850';
-                break;
-            case 'electric':
-                backgroundColor = '#F8D030';
-                break;
-            case 'ice':
-                backgroundColor = '#98D8D8';
-                break;
-            case 'fighting':
-                backgroundColor = '#C03028';
+                color = '#C03028';
                 break;
             case 'poison':
-                backgroundColor = '#A040A0';
+                color = '#A040A0';
                 break;
             case 'ground':
-                backgroundColor = '#E0C068';
+                color = '#E0C068';
                 break;
             case 'flying':
-                backgroundColor = '#A890F0';
+                color = '#A890F0';
                 break;
             case 'psychic':
-                backgroundColor = '#F85888';
+                color = '#F85888';
                 break;
             case 'bug':
-                backgroundColor = '#A8B820';
+                color = '#A8B820';
                 break;
             case 'rock':
-                backgroundColor = '#B8A038';
+                color = '#B8A038';
                 break;
             case 'ghost':
-                backgroundColor = '#705898';
+                color = '#705898';
                 break;
             case 'dragon':
-                backgroundColor = '#7038F8';
+                color = '#7038F8';
                 break;
             case 'dark':
-                backgroundColor = '#705848';
+                color = '#705848';
                 break;
             case 'steel':
-                backgroundColor = '#B8B8D0';
+                color = '#B8B8D0';
                 break;
             case 'fairy':
-                backgroundColor = '#F0B6BC';
+                color = '#F0B6BC';
                 break;
         }
     }
-    document.querySelector('.pokemon-class1').style.backgroundColor = backgroundColor;
-}
-
-function changeCardBackgroundColorByMainType(i) {
-    let backgroundColor = 'white';
-
-    if (currentTypes.length > 0) {
-        const primaryType = currentTypes[0];
-        switch (primaryType) {
-            case 'normal':
-                backgroundColor = '#A8A878';
-                break;
-            case 'fire':
-                backgroundColor = '#F08030';
-                break;
-            case 'water':
-                backgroundColor = '#6890F0';
-            case 'grass':
-                backgroundColor = '#78c850';
-                break;
-            case 'electric':
-                backgroundColor = '#F8D030';
-                break;
-            case 'ice':
-                backgroundColor = '#98D8D8';
-                break;
-            case 'fighting':
-                backgroundColor = '#C03028';
-                break;
-            case 'poison':
-                backgroundColor = '#A040A0';
-                break;
-            case 'ground':
-                backgroundColor = '#E0C068';
-                break;
-            case 'flying':
-                backgroundColor = '#A890F0';
-                break;
-            case 'psychic':
-                backgroundColor = '#F85888';
-                break;
-            case 'bug':
-                backgroundColor = '#A8B820';
-                break;
-            case 'rock':
-                backgroundColor = '#B8A038';
-                break;
-            case 'ghost':
-                backgroundColor = '#705898';
-                break;
-            case 'dragon':
-                backgroundColor = '#7038F8';
-                break;
-            case 'dark':
-                backgroundColor = '#705848';
-                break;
-            case 'steel':
-                backgroundColor = '#B8B8D0';
-                break;
-            case 'fairy':
-                backgroundColor = '#F0B6BC';
-                break;
-        }
-    }
-    document.querySelector(`#poke-container${i}`).style.backgroundColor = backgroundColor;
+    return color;
 }
 
 function clearTypes() {

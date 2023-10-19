@@ -11,6 +11,10 @@ table {
     width: 90%;
 }
 
+h3 {
+    text-align: center;
+}
+
 .pokedex-main-container {
     height: 100vh;
     width: 100vw;
@@ -144,7 +148,7 @@ table {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-left: 16px;
+
 }
 
 #pokemonList {
@@ -174,6 +178,7 @@ table {
 }
 
 .poke-img {
+    object-fit: contain;
     width: 250px;
     height: 250px;
 }
@@ -202,13 +207,11 @@ table {
 
 .btn-danger {
     color: white !important;
-    border-color: #D53B47 !important;
     background-color: #D53B47 !important;
 }
 
 #content {
     width: 100%;
-    margin-bottom: 5%;
 }
 
 .load-next-container {
@@ -217,4 +220,68 @@ table {
     display: flex;
     align-items: center;
     justify-content: space-around;
+}
+
+.btn {
+    border: none !important;
+}
+
+@media (max-width: 1250px){
+    .poke-container {
+        width: 250px;
+        height: 250px;
+    }
+    .poke-img {
+        width: 200px;
+        height: 200px;
+    }
+}
+
+@media (max-width: 1050px){
+    .poke-container {
+        width: 200px;
+        height: 200px;
+        border-radius: 32px;
+    }
+    .poke-img {
+        width: 150px;
+        height: 150px;
+    }
+}
+
+@media (max-width: 850px){
+    h3 {
+        font-size: 20px !important;
+    }
+    .poke-container {
+        width: 150px;
+        height: 150px;
+        border-radius: 24px;
+    }
+    .poke-img {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+@media (max-width: 650px){
+    h3 {
+        font-size: 16px !important;
+    }
+    .poke-container {
+        width: 100px;
+        height: 100px;
+        border-radius: 16px;
+    }
+    .poke-img {
+        width: 50px;
+        height: 50px;
+    }
+    #moveList td {
+        padding: 4px !important;
+        font-size: 12px;
+    }
+    #moveList td div button {
+        font-size: 12px;
+    }
 }
