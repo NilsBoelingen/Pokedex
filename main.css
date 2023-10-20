@@ -21,7 +21,7 @@ h3 {
 }
 
 .pokedex-img-container {
-    height: 35%;
+    height: 30%;
     width: 100%;
     background-color: rgba(213, 59, 71, 1);
     border-bottom-left-radius: 80px;
@@ -118,7 +118,7 @@ h3 {
 }
 
 .btn-primary {
-    margin: 5% !important;
+    margin: 3% !important;
 }
 
 #moveList {
@@ -148,7 +148,6 @@ h3 {
     display: flex;
     justify-content: center;
     align-items: center;
-
 }
 
 #pokemonList {
@@ -226,6 +225,30 @@ h3 {
     border: none !important;
 }
 
+#dropdownMenu {
+    display: block;
+    position: absolute;
+    z-index: 5;
+    background-color: rgba(43, 41, 44, 0.95);
+    top: 38px;
+    max-height: 480px;
+    width: 200px;
+    overflow-y: scroll;
+    border-radius: 8px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    padding-left: 8px;
+}
+
+#dropdownMenu::-webkit-scrollbar {
+    display: none;
+}
+
+#dropdownMenu p {
+    color: white;
+    cursor: pointer;
+}
+
 @media (max-width: 1250px){
     .poke-container {
         width: 250px;
@@ -283,5 +306,19 @@ h3 {
     }
     #moveList td div button {
         font-size: 12px;
+    }
+    #inputPokemon {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 450px){
+    #inputPokemon {
+        font-size: 10px;
+    }
+    
+    #dropdownMenu {
+        max-height: 320px;
+        width: 150px;
     }
 }

@@ -4,13 +4,14 @@ let maxStats = [255, 190, 250, 194, 250, 200];
 let statNames = ['HP', 'ATK', 'DEF', 'S-ATK', 'S-DEF', 'SPD'];
 let currentTypes = [];
 let offset = 0;
+let allPokemonNames = [];
 
 async function initMainPage() {
     clearTypes();
     renderMainPage();
     await getPokemonList();
     loadPokemonList();
-
+    getAllPokemonNames();
 }
 
 async function initPokedex(pokemon) {
@@ -41,6 +42,32 @@ async function getPokemonList() {
     let response = await fetch(url);
     let responseAtJson = await response.json();
     allPokemon = responseAtJson.results;
+}
+
+async function getAllPokemonNames() {
+    let url = `https://pokeapi.co/api/v2/pokemon?offset=0&limit=2000`;
+    let response = await fetch(url);
+    let responseAtJson = await response.json();
+    allPokemonNames = responseAtJson.results.map(result => result.name);
+}
+
+function updateDropdown() {
+    let input = document.getElementById('inputPokemon').value.toLowerCase();
+    let dropdown = document.getElementById('dropdownMenu');
+    dropdown.innerHTML = '';
+    let matchingNames = allPokemonNames.filter(name => name.includes(input));
+    renderDropDownSearch(matchingNames, dropdown);
+    dropdown.style.display = matchingNames.length > 0 ? 'block' : 'none';
+}
+
+function selectName(name) {
+    document.getElementById('inputPokemon').value = name;
+    document.getElementById('dropdownMenu').style.display = 'none';
+}
+
+function searchWithInput() {
+    let input = document.getElementById('inputPokemon').value.toLowerCase();
+    initPokedex(input);
 }
 
 function next20Pokemon() {
@@ -77,21 +104,25 @@ async function renderImg() {
     for (let i = 0; i < allPokemon.length; i++) {
         const pokemon = allPokemon[i].name;
         await getPokemon(pokemon);
-        let imgContainer = document.getElementById(`pokemon${i}`);
-        let img = currentPokemon.sprites.other.dream_world.front_default;
-        let imgAlt = currentPokemon.sprites.front_default;
-        let imgNotFound = './img/pokemon-logo.png';
-        if (img) {
-            imgContainer.setAttribute('src', `${img}`);
-        } else if (imgAlt) {
-            imgContainer.setAttribute('src', `${imgAlt}`);
-        } else {
-            imgContainer.setAttribute('src', `${imgNotFound}`);
-        }
+        getPokemonImg(i);
         getCurrentTypes();
         changeBackgroundColorByType(0);
         document.querySelector(`#poke-container${i}`).style.backgroundColor = color;
         clearTypes();
+    }
+}
+
+function getPokemonImg(i) {
+    let imgContainer = document.getElementById(`pokemon${i}`);
+    let img = currentPokemon.sprites.other.dream_world.front_default;
+    let imgAlt = currentPokemon.sprites.front_default;
+    let imgNotFound = './img/pokemon-logo.png';
+    if (img) {
+        imgContainer.setAttribute('src', `${img}`);
+    } else if (imgAlt) {
+        imgContainer.setAttribute('src', `${imgAlt}`);
+    } else {
+        imgContainer.setAttribute('src', `${imgNotFound}`);
     }
 }
 
@@ -122,21 +153,26 @@ function loadPokemonType() {
     let typesContainer = document.getElementById('typesContainer');
     let types = currentPokemon.types;
     typesContainer.innerHTML = '';
+    getPokemonTypes(types);
+    getCurrentTypes();
+    changeTypeButtonColor();
+    changeBackgroundColorByType(0);
+    document.querySelector('.pokedex-img-container').style.backgroundColor = color;
+    document.querySelector('#goToMoves').setAttribute('style', `background-color: ${color} !important`);
+}
 
+function getPokemonTypes(types) {
     for (let i = 0; i < types.length; i++) {
         const type = types[i].type.name;
         typesContainer.innerHTML += renderPokemonTypes(i, type);
-
     }
-    getCurrentTypes();
+}
 
+function changeTypeButtonColor() {
     for (let j = 0; j < currentTypes.length; j++) {
         changeBackgroundColorByType(j);
         document.querySelector(`.pokemon-class${j}`).style.backgroundColor = color;
     }
-    changeBackgroundColorByType(0);
-    document.querySelector('.pokedex-img-container').style.backgroundColor = color;
-    document.querySelector('#goToMoves').setAttribute('style', `background-color: ${color} !important`);
 }
 
 function loadPokemonSize() {
@@ -151,7 +187,11 @@ function loadPokemonStats() {
     let statsContainer = document.getElementById('statsContainer');
     let stats = currentPokemon.stats;
     statsContainer.innerHTML = '';
+    getPokemonStats(statsContainer, stats)
+    loadBaseExp(statsContainer);
+}
 
+function getPokemonStats (statsContainer, stats) {
     for (let i = 0; i < stats.length; i++) {
         const statName = statNames[i];
         const stat = stats[i].base_stat;
@@ -161,7 +201,6 @@ function loadPokemonStats() {
         changeBackgroundColorByType(0);
         document.querySelector(`#stat${i}`).style.backgroundColor = color;
     }
-    loadBaseExp(statsContainer);
 }
 
 function loadBaseExp(statsContainer) {
@@ -177,7 +216,12 @@ function loadMoves() {
     let moveList = document.getElementById('moveList');
     let moves = currentPokemon.moves;
     moveList.innerHTML = renderMoves();
-    let important = ' !impotant'
+    getPokemonMoves(moves);
+    changeBackgroundColorByType(0);
+    document.querySelector(`#backToStats`).setAttribute('style', `background-color: ${color} !important`);
+}
+
+function getPokemonMoves(moves) {
     for (let i = 0; i < moves.length; i++) {
         const move = moves[i];
         const moveName = moves[i].move.name;
@@ -187,8 +231,6 @@ function loadMoves() {
         document.querySelector('.pokedex-img-container').style.backgroundColor = color;
         document.querySelector(`#btn${i}`).setAttribute('style', `background-color: ${color} !important`);
     }
-    changeBackgroundColorByType(0);
-    document.querySelector(`#backToStats`).setAttribute('style', `background-color: ${color} !important`);
 }
 
 function loadVersions(move, i) {
@@ -203,6 +245,18 @@ function loadAtLvlLearn(i, j) {
     let lvl = currentPokemon.moves[i].version_group_details[j].level_learned_at;
     let learnAtLvl = document.getElementById(`learnAtLvl${i}`);
     learnAtLvl.innerHTML = lvl;
+}
+
+function getCurrentTypes() {
+    let types = currentPokemon.types;
+    for (let i = 0; i < types.length; i++) {
+        const type = types[i].type.name;
+        currentTypes.push(type);
+    }
+}
+
+function clearTypes() {
+    currentTypes.splice(0, 2)
 }
 
 function renderMoveList(moveName, i) {
@@ -243,9 +297,11 @@ function renderMainPage() {
         </div>
         <div class="search-field">
             <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Type Pokemon Name for Search ..." id="inputPokemon">
-                <button class="btn btn-outline-secondary btn-danger" type="button" id="button-addon2" onclick="searchWhithInput()">Search</button>
+                <input type="search" class="form-control" placeholder="Pokemon for Search ..." id="inputPokemon" oninput="updateDropdown()">
+                <button class="btn btn-outline-secondary btn-danger" type="button" id="button-addon2" onclick="searchWithInput()">Search</button>
+                <div id="dropdownMenu" class="dropdown-menu" style="display: none;"></div>
             </div>
+            
         </div>
         <div id="pokemonList">
         </div>
@@ -311,7 +367,7 @@ function renderBaseExp(bExp, bExpAsPercent) {
                 aria-label="Example with label"
                 aria-valuenow="${bExp}" aria-valuemin="0"
                 aria-valuemax="255">
-            <div class="progress-bar" id="EXP" style="width: ${bExpAsPercent}%">${bExp}/255</div>
+            <div class="progress-bar" id="EXP" style="width: ${bExpAsPercent}%">${bExp}/563</div>
             </div>
         </td>
     </tr>
@@ -367,18 +423,21 @@ function renderPokemonList(pokemonName, i) {
     `;
 }
 
-function getCurrentTypes() {
-    let types = currentPokemon.types;
-    for (let i = 0; i < types.length; i++) {
-        const type = types[i].type.name;
-        currentTypes.push(type);
-    }
-}
-
 function renderPokemonTypes(i, type) {
     return `
     <div class="pokemon-class${i}">${type.toUpperCase()}</div>
 `;
+}
+
+function renderDropDownSearch(matchingNames, dropdown) {
+    matchingNames.forEach(name => {
+        let p = document.createElement('p');
+        p.textContent = name.toUpperCase();
+        p.onclick = function() {
+            selectName(p.textContent);
+        };
+        dropdown.appendChild(p);
+    });
 }
 
 function changeBackgroundColorByType(j) {
@@ -441,15 +500,4 @@ function changeBackgroundColorByType(j) {
         }
     }
     return color;
-}
-
-function clearTypes() {
-    currentTypes.splice(0, 2)
-}
-
-function searchWhithInput() {
-    let input = document.getElementById('inputPokemon').value;
-    let lowerInput = input.toLowerCase();
-    let trimLowerInput = lowerInput.trim();
-    initPokedex(trimLowerInput);
 }
